@@ -734,6 +734,17 @@ KBUILD_CFLAGS	+= -mcpu=cortex-a76.cortex-a55+crypto+crc
 endif
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS	+= -mcpu=cortex-a76+crypto+crc
+
+#Enable fast FMA optimizations
+KBUILD_CFLAGS   += -ffp-contract=fast
+#Enable MLGO for register allocation.
+KBUILD_CFLAGS   += -mllvm -regalloc-enable-advisor=release
+#Enable hot cold split optimization
+KBUILD_CFLAGS   += -mllvm -hot-cold-split=true
+
+KBUILD_CFLAGS   += -mllvm -inline-threshold=1300
+KBUILD_CFLAGS   += -mllvm -inlinehint-threshold=2000
+KBUILD_CFLAGS   += -mllvm -unroll-threshold=900
 endif
 endif
 ifdef CONFIG_POLLY_CLANG
@@ -834,6 +845,8 @@ KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 
 ifeq ($(ld-name),lld)
 LDFLAGS += --lto-O3
+LDFLAGS += -mllvm -regalloc-enable-advisor=release
+LDFLAGS += -mllvm -enable-ml-inliner=release
 endif
 
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
@@ -926,7 +939,7 @@ endif
 
 ifdef CONFIG_LTO_CLANG
 ifdef CONFIG_THINLTO
-lto-clang-flags	:= -flto=thin
+lto-clang-flags	:= -flto=thin -funified-lto
 LDFLAGS		+= --thinlto-cache-dir=.thinlto-cache
 else
 lto-clang-flags	:= -flto
